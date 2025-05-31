@@ -1,7 +1,7 @@
 import { handleScanAuthentication } from '@src/controllers';
-import { Router } from 'express';
+import { type IRouter, Router } from 'express';
 
-const router = Router();
+const router: IRouter = Router();
 
 router.post('/scan/:sessionId', handleScanAuthentication);
 

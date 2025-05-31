@@ -1,9 +1,9 @@
 import { gitlabConfig } from '@src/config';
 import { authMiddleware, requestLogger } from '@src/middleware';
 import { setupRoutes } from '@src/routes';
-import express from 'express';
+import express, { type Express } from 'express';
 
-const app = express();
+const app: Express = express();
 const PORT = process.env['PORT'] || 3100;
 
 // Middleware setup

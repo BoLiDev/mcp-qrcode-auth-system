@@ -1,7 +1,7 @@
 import { handleQRCodeGeneration, handleStatusQuery } from '@src/controllers';
-import { Router } from 'express';
+import { type IRouter, Router } from 'express';
 
-const router = Router();
+const router: IRouter = Router();
 
 router.get('/', handleQRCodeGeneration);
 router.get('/status/:sessionId', handleStatusQuery);

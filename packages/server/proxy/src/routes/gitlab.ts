@@ -1,7 +1,7 @@
 import { GitLabController } from '@src/controllers';
-import { Router } from 'express';
+import { type IRouter, Router } from 'express';
 
-const router = Router();
+const router: IRouter = Router();
 
 router.all('/gitlab/{*any}', GitLabController.proxyRequest);
 
