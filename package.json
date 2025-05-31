@@ -1,0 +1,64 @@
+{
+  "name": "qrcode-auth-monorepo",
+  "version": "1.0.0",
+  "description": "QR Code Authentication Monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix",
+    "format": "pnpm -r format",
+    "format:check": "pnpm -r format:check",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "qrcode",
+    "authentication",
+    "monorepo",
+    "typescript",
+    "react",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "@types/node": "^20.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "lint-staged": {
+    "packages/*/src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "packages/client/qrcode/src/**/*.{ts,tsx}": [
+      "pnpm --filter @client/qrcode lint --fix",
+      "prettier --write"
+    ],
+    "packages/server/mcp/src/**/*.ts": [
+      "pnpm --filter @server/mcp lint:fix",
+      "pnpm --filter @server/mcp format"
+    ],
+    "packages/server/proxy/src/**/*.ts": [
+      "pnpm --filter @server/proxy lint:fix",
+      "pnpm --filter @server/proxy format"
+    ],
+    "packages/server/qrcode/src/**/*.ts": [
+      "pnpm --filter @server/qrcode lint:fix",
+      "pnpm --filter @server/qrcode format"
+    ]
+  }
+}

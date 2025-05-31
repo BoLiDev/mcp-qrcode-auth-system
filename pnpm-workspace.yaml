@@ -1,0 +1,5 @@
+# @format
+
+packages:
+  - "packages/server/*"
+  - "packages/client/*"
