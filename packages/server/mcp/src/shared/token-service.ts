@@ -101,13 +101,13 @@ export class TokenService {
     return await this.tokenManager.getToken();
   }
 
-  public async startAuthFlowIfNeeded(): Promise<void> {
-    await this.openBrowserForAuth();
+  public async startAuthFlowIfNeeded(currentPath?: string): Promise<void> {
+    await this.openBrowserForAuth(currentPath);
   }
 
-  private async openBrowserForAuth(): Promise<void> {
+  private async openBrowserForAuth(currentPath?: string): Promise<void> {
     const sessionId = `session_${Date.now()}`;
-    const url = `${this.config.externalServices.qrCodeUrl}?sessionId=${sessionId}&callback=${encodeURIComponent(this.config.tokenServer.callbackUrl)}`;
+    const url = `${this.config.externalServices.qrCodeUrl}?sessionId=${sessionId}&callback=${this.formatCallbackUrl(currentPath)}`;
 
     try {
       await this.openUrl(url);
@@ -118,20 +118,38 @@ export class TokenService {
     }
   }
 
+  private formatCallbackUrl(currentPath?: string): string {
+    const callbackUrl = `${this.config.tokenServer.callbackUrl}${currentPath ? `?currentPath=${currentPath}` : ''}`;
+
+    return encodeURIComponent(callbackUrl);
+  }
+
   private async openUrl(url: string): Promise<void> {
     const platform = process.platform;
     let command: string;
 
     switch (platform) {
       case 'darwin':
-        command = `open "${url}"`;
+        // command = `open -na "Google Chrome" --args \
+        // --app="${url}" \
+        // --start-fullscreen \
+        // --start-maximized \
+        // --no-first-run \
+        // --no-default-browser-check \
+        // --disable-infobars`;
+        command = `open "${url}" --args --start-fullscreen --start-maximized --no-first-run --no-default-browser-check --disable-infobars`;
         break;
       case 'win32':
-        command = `start "${url}"`;
-        break;
+        throw new Error('Windows is not supported yet');
       default:
-        command = `xdg-open "${url}"`;
-        break;
+        command = `open -na "Google Chrome" --args \
+  --user-data-dir="/tmp/chrome-${Date.now()}" \
+  --app="${url}" \
+  --start-fullscreen \
+  --start-maximized \
+  --no-first-run \
+  --no-default-browser-check \
+  --disable-infobars`;
     }
 
     await execAsync(command);

@@ -18,7 +18,6 @@ export class TokenServer {
   }
 
   public async start(): Promise<void> {
-    await this.initializeTokenService();
     await this.startServer();
   }
 
@@ -48,10 +47,6 @@ export class TokenServer {
     this.app.get('/health', (_, res) => {
       res.json({ status: 'ok', timestamp: new Date().toISOString() });
     });
-  }
-
-  private async initializeTokenService(): Promise<void> {
-    await this.tokenService.checkTokenOnStartup();
   }
 
   private async startServer(): Promise<void> {

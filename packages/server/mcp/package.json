@@ -35,6 +35,8 @@
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/express": "^5.0.2",
     "@types/jest": "^29.5.14",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/keychain": "^1.4.4",
     "@types/node": "^20.0.0",
     "@types/qrcode": "^1.5.5",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
@@ -63,6 +65,8 @@
     "@modelcontextprotocol/sdk": "^1.12.1",
     "axios": "^1.9.0",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "keychain": "^1.5.0",
     "qrcode": "^1.5.4",
     "zod": "^3.25.42"
   }

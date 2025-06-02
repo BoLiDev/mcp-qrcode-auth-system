@@ -1,6 +1,3 @@
-import { homedir } from 'os';
-import { join } from 'path';
-
 import { Config } from './types';
 
 export const createSharedConfig = (): Config => ({
@@ -17,6 +14,7 @@ export const createSharedConfig = (): Config => ({
     authServiceUrl: 'http://localhost:3000',
   },
   storage: {
-    tokenPath: join(homedir(), '.mcp-gitlab-auth', 'token.json'),
+    accountName: 'okfe',
+    service: 'mcp-auth',
   },
 });

@@ -12,7 +12,8 @@ export interface Config {
     authServiceUrl: string;
   };
   storage: {
-    tokenPath: string;
+    accountName: string;
+    service: string;
   };
 }
 

@@ -1,22 +1,22 @@
-import { TokenManager, TokenService } from '../shared';
+import { TokenManager } from '../shared';
 import { HttpClient } from './http-client';
 import { GitLabProject, GitLabServiceConfig } from './types';
+
+const ASK_FOR_REAUTH_MESSAGE = `
+No authentication token available.
+Please check with user whether to authenticate first by only saying "🔑 MCP not authenticated, please confirm to start the authentication flow which will redirect you to scan QR code" and end the conversation right after the sentence.
+NOTE: NEVER call start-auth-flow tool if user's permission is not granted.
+`;
 
 export class GitLabService {
   private readonly config: GitLabServiceConfig;
   private readonly httpClient: HttpClient;
   private readonly tokenManager: TokenManager;
-  private readonly tokenService: TokenService;
 
-  constructor(
-    config: GitLabServiceConfig,
-    tokenManager: TokenManager,
-    tokenService: TokenService
-  ) {
+  constructor(config: GitLabServiceConfig, tokenManager: TokenManager) {
     this.config = config;
     this.httpClient = new HttpClient(config.timeout);
     this.tokenManager = tokenManager;
-    this.tokenService = tokenService;
   }
 
   public async getRepoInfo(
@@ -56,9 +56,7 @@ export class GitLabService {
     const token = await this.tokenManager.getToken();
 
     if (!token) {
-      throw new Error(
-        'No authentication token available. Please authenticate first.'
-      );
+      throw new Error(ASK_FOR_REAUTH_MESSAGE);
     }
 
     return token;
@@ -92,7 +90,6 @@ export class GitLabService {
       return project;
     }
 
-    // Create a filtered object with only requested fields
     const filteredProject: Partial<GitLabProject> = {};
 
     for (const field of fields) {
@@ -114,13 +111,8 @@ export class GitLabService {
         throw new Error(`GitLab project not found: ${identifier}`);
       }
       if (error.message.includes('403') || error.message.includes('401')) {
-        // Clear invalid token when we get authentication errors
-        console.error('Authentication failed, clearing stored token...');
         await this.tokenManager.clearToken();
-        await this.tokenService.startAuthFlowIfNeeded();
-        throw new Error(
-          `Authentication failed. Token has been cleared. Please re-authenticate.`
-        );
+        throw new Error(ASK_FOR_REAUTH_MESSAGE);
       }
       if (error.message.includes('timeout')) {
         throw new Error(

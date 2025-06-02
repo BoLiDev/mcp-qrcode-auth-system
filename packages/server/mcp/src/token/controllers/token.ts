@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 
 import { TokenService } from '../../shared/token-service.js';
+import { authSuccessHtml } from './auth-success.html.js';
 
 export class TokenController {
   private readonly tokenService: TokenService;
@@ -12,8 +13,9 @@ export class TokenController {
   public async handleCallback(req: Request, res: Response): Promise<void> {
     try {
       const authToken = this.extractAuthToken(req);
+      const currentPath = this.extractCurrentPath(req);
       await this.processAuthToken(authToken);
-      this.sendSuccessResponse(res);
+      this.sendSuccessResponse(res, currentPath);
     } catch (error) {
       this.sendErrorResponse(res, error);
     }
@@ -29,15 +31,18 @@ export class TokenController {
     return authToken;
   }
 
+  private extractCurrentPath(req: Request): string | undefined {
+    const currentPath = req.query['currentPath'] as string | undefined;
+
+    return currentPath;
+  }
+
   private async processAuthToken(authToken: string): Promise<void> {
     await this.tokenService.processCallback(authToken);
   }
 
-  private sendSuccessResponse(res: Response): void {
-    res.status(200).json({
-      success: true,
-      message: 'Authentication completed successfully',
-    });
+  private sendSuccessResponse(res: Response, currentPath?: string): void {
+    res.status(200).type('html').send(authSuccessHtml(currentPath));
   }
 
   private sendErrorResponse(res: Response, error: unknown): void {
