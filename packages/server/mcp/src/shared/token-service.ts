@@ -101,13 +101,22 @@ export class TokenService {
     return await this.tokenManager.getToken();
   }
 
-  public async startAuthFlowIfNeeded(currentPath?: string): Promise<void> {
-    await this.openBrowserForAuth(currentPath);
+  public getConfig(): Config {
+    return this.config;
   }
 
-  private async openBrowserForAuth(currentPath?: string): Promise<void> {
-    const sessionId = `session_${Date.now()}`;
-    const url = `${this.config.externalServices.qrCodeUrl}?sessionId=${sessionId}&callback=${this.formatCallbackUrl(currentPath)}`;
+  public async startAuthFlowIfNeeded(
+    currentPath?: string,
+    sessionId?: string
+  ): Promise<void> {
+    await this.openBrowserForAuth(currentPath, sessionId);
+  }
+
+  private async openBrowserForAuth(
+    currentPath?: string,
+    sessionId?: string
+  ): Promise<void> {
+    const url = `${this.config.externalServices.qrCodeUrl}?callback=${this.formatCallbackUrl(currentPath, sessionId)}`;
 
     try {
       await this.openUrl(url);
@@ -118,8 +127,20 @@ export class TokenService {
     }
   }
 
-  private formatCallbackUrl(currentPath?: string): string {
-    const callbackUrl = `${this.config.tokenServer.callbackUrl}${currentPath ? `?currentPath=${currentPath}` : ''}`;
+  private formatCallbackUrl(currentPath?: string, sessionId?: string): string {
+    let callbackUrl = this.config.tokenServer.callbackUrl;
+
+    const params = [];
+    if (sessionId) {
+      params.push(`sessionId=${encodeURIComponent(sessionId)}`);
+    }
+    if (currentPath) {
+      params.push(`currentPath=${encodeURIComponent(currentPath)}`);
+    }
+
+    if (params.length > 0) {
+      callbackUrl += `?${params.join('&')}`;
+    }
 
     return encodeURIComponent(callbackUrl);
   }

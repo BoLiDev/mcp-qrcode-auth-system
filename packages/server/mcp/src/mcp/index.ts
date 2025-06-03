@@ -1,13 +1,13 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import axios from 'axios';
 import { z } from 'zod';
 
-import { createSharedConfig, TokenManager, TokenService } from '../shared';
+import { createSharedConfig, TokenManager } from '../shared';
 import { GitLabService } from './gitlab-service';
 
 const config = createSharedConfig();
 const tokenManager = new TokenManager(config);
-const tokenService = new TokenService(config, tokenManager);
 const gitlabService = new GitLabService(
   {
     proxyBaseUrl: config.proxyServer.baseUrl,
@@ -15,6 +15,45 @@ const gitlabService = new GitLabService(
   },
   tokenManager
 );
+
+// Helper function to poll validation status
+async function pollValidationStatus(
+  sessionId: string,
+  timeoutMs: number = 3 * 60 * 1000
+): Promise<{ success: boolean; authToken?: string; error?: string }> {
+  const startTime = Date.now();
+  const pollInterval = 2000; // 2 seconds
+
+  while (Date.now() - startTime < timeoutMs) {
+    try {
+      const response = await axios.get(
+        `${config.tokenServer.callbackUrl.replace('/auth/callback', '')}/auth/validate/status?sessionId=${sessionId}`,
+        { timeout: 5000 }
+      );
+
+      const { status, authToken, error } = response.data;
+
+      console.error('Validation status:', status, authToken, error);
+
+      if (status === 'success') {
+        return { success: true, authToken };
+      } else if (status === 'failed') {
+        return { success: false, error: error || 'Authentication failed' };
+      } else if (status === 'expired') {
+        return { success: false, error: 'Session expired' };
+      }
+
+      // Status is still 'pending', continue polling
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+    } catch (error) {
+      console.error('Error polling validation status:', error);
+      // Continue polling on network errors
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+    }
+  }
+
+  return { success: false, error: 'Authentication timeout (3 minutes)' };
+}
 
 const server = new McpServer(
   {
@@ -44,21 +83,54 @@ server.tool(
   },
   async ({ currentPath }) => {
     try {
-      await tokenService.startAuthFlowIfNeeded(currentPath);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: 'Authentication flow started. Please do not perform any further action until user next query',
-          },
-        ],
-      };
+      // Step 1: Start validation session
+      const startResponse = await axios.post(
+        `${config.tokenServer.callbackUrl.replace('/auth/callback', '')}/auth/validate/start`,
+        {},
+        {
+          params: currentPath ? { currentPath } : {},
+          timeout: 10000,
+        }
+      );
+
+      const { sessionId, qrCodeUrl } = startResponse.data;
+
+      console.error(`Authentication started - Session: ${sessionId}`);
+      console.error(`QR Code URL: ${qrCodeUrl}`);
+
+      // Step 2: Poll for completion
+      const result = await pollValidationStatus(sessionId);
+
+      if (result.success) {
+        console.error('Authentication completed successfully');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Authentication flow completed successfully. You can now use GitLab tools.',
+            },
+          ],
+        };
+      } else {
+        console.error(`Authentication failed: ${result.error}`);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Authentication failed: ${result.error}. Please try again.`,
+            },
+          ],
+        };
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error occurred';
 
+      console.error('Auth flow error:', errorMessage);
       return {
-        content: [{ type: 'text', text: errorMessage }],
+        content: [
+          { type: 'text', text: `Authentication error: ${errorMessage}` },
+        ],
       };
     }
   }
